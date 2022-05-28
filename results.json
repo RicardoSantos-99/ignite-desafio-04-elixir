@@ -1,6 +1,8 @@
 {
   "excluded": [],
-  "failed": [
+  "failed": [],
+  "invalid": [],
+  "passed": [
     {
       "describe": "parse_file/1",
       "file": "/home/brainiac/projetos/pessoais/elixir/ignite-desafio-04-elixir/test/parser_test.exs",
@@ -14,10 +16,7 @@
       "line": 10,
       "module": "Elixir.GenReportTest",
       "test": "test build/1 When passing file name return a report"
-    }
-  ],
-  "invalid": [],
-  "passed": [
+    },
     {
       "describe": "build/1",
       "file": "/home/brainiac/projetos/pessoais/elixir/ignite-desafio-04-elixir/test/gen_report_test.exs",

@@ -35,6 +35,14 @@ defmodule GenReport do
     |> Enum.reduce(report_acc(), fn line, report -> sum_values(line, report) end)
   end
 
+  def build do
+    {:error, "Insira o nome de um arquivo"}
+  end
+
+  def build_from_many(filenames) when not is_list(filenames) do
+    {:error, "Please provide a list of strings!"}
+  end
+
   def build_from_many(filenames) do
     result =
       filenames
@@ -48,19 +56,26 @@ defmodule GenReport do
   end
 
   defp sum_reports(
-         %{"all_hours" => hours1, "hours_per_month" => months1, "hours_per_year" => years1},
-         %{"all_hours" => hours2, "hours_per_month" => months2, "hours_per_year" => years2}
+         %{"all_hours" => all_hours1, "hours_per_month" => months1, "hours_per_year" => years1},
+         %{"all_hours" => all_hours2, "hours_per_month" => months2, "hours_per_year" => years2}
        ) do
-    months = Enum.map(months1, fn {key, elem} -> %{key => merge_maps(elem, months2[key])} end)
-    years = Enum.map(years1, fn {key, elem} -> %{key => merge_maps(elem, years2[key])} end)
+    all_hours = merge_maps(all_hours1, all_hours2)
+    hours_per_month = merge_maps(months1, months2)
+    hours_per_year = merge_maps(years1, years2)
 
-    hours = merge_maps(hours1, hours2)
-
-    build_report(hours, months, years)
+    build_report(all_hours, hours_per_month, hours_per_year)
   end
 
-  def merge_maps(map1, map2) do
-    Map.merge(map1, map2, fn _key, value1, value2 -> value1 + value2 end)
+  defp merge_maps(map1, map2) do
+    Map.merge(map1, map2, fn _key, value1, value2 -> calc_merge_maps(value1, value2) end)
+  end
+
+  defp calc_merge_maps(value1, value2) when is_map(value1) and is_map(value2) do
+    merge_maps(value1, value2)
+  end
+
+  defp calc_merge_maps(value1, value2) when is_integer(value1) and is_integer(value2) do
+    value1 + value2
   end
 
   defp sum_values(
@@ -82,14 +97,10 @@ defmodule GenReport do
   end
 
   defp report_acc do
-    hours = Enum.into(@available_names, %{}, &{&1, 0})
-    months = Enum.into(@available_months, %{}, &{&1, 0})
-    years = Enum.into(2016..2020, %{}, &{&1, 0})
-
     build_report(
-      hours,
-      Enum.into(@available_names, %{}, &{&1, months}),
-      Enum.into(@available_names, %{}, &{&1, years})
+      report_hours_acc(),
+      Enum.into(@available_names, %{}, &{&1, report_months_acc()}),
+      Enum.into(@available_names, %{}, &{&1, report_years_acc()})
     )
   end
 
@@ -99,4 +110,8 @@ defmodule GenReport do
       "hours_per_month" => months,
       "hours_per_year" => years
     }
+
+  defp report_years_acc, do: Enum.into(2016..2020, %{}, &{&1, 0})
+  defp report_months_acc, do: Enum.into(@available_months, %{}, &{&1, 0})
+  defp report_hours_acc, do: Enum.into(@available_names, %{}, &{&1, 0})
 end
