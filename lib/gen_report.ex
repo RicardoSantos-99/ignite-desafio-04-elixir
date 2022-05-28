@@ -29,18 +29,38 @@ defmodule GenReport do
     "dezembro"
   ]
 
-  def build do
-    {:error, "Insira o nome de um arquivo"}
-  end
-
   def build(filename) do
     filename
     |> Parser.parse_file()
-    |> IO.inspect()
-    |> Enum.reduce(
-      report_acc(),
-      fn line, report -> sum_values(line, report) end
-    )
+    |> Enum.reduce(report_acc(), fn line, report -> sum_values(line, report) end)
+  end
+
+  def build_from_many(filenames) do
+    result =
+      filenames
+      |> Task.async_stream(&build/1)
+      |> Enum.reduce(
+        report_acc(),
+        fn {:ok, result}, report -> sum_reports(report, result) end
+      )
+
+    {:ok, result}
+  end
+
+  defp sum_reports(
+         %{"all_hours" => hours1, "hours_per_month" => months1, "hours_per_year" => years1},
+         %{"all_hours" => hours2, "hours_per_month" => months2, "hours_per_year" => years2}
+       ) do
+    months = Enum.map(months1, fn {key, elem} -> %{key => merge_maps(elem, months2[key])} end)
+    years = Enum.map(years1, fn {key, elem} -> %{key => merge_maps(elem, years2[key])} end)
+
+    hours = merge_maps(hours1, hours2)
+
+    build_report(hours, months, years)
+  end
+
+  def merge_maps(map1, map2) do
+    Map.merge(map1, map2, fn _key, value1, value2 -> value1 + value2 end)
   end
 
   defp sum_values(
@@ -61,7 +81,7 @@ defmodule GenReport do
     build_report(hours, months, years)
   end
 
-  def report_acc do
+  defp report_acc do
     hours = Enum.into(@available_names, %{}, &{&1, 0})
     months = Enum.into(@available_months, %{}, &{&1, 0})
     years = Enum.into(2016..2020, %{}, &{&1, 0})

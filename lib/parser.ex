@@ -15,7 +15,7 @@ defmodule GenReport.Parser do
 
   defp convert_list([hd | tail]), do: [String.downcase(hd) | Enum.map(tail, &String.to_integer/1)]
 
-  def convert_date(num) do
+  defp convert_date(num) do
     case num do
       1 -> "janeiro"
       2 -> "fevereiro"
